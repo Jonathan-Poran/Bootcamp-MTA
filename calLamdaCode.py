@@ -1,4 +1,10 @@
 import json
+import boto3
+from datetime import datetime
+
+# Initialize DynamoDB
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('clac-history')
 
 def lambda_handler(event, context):
     print("event = ", event)
@@ -32,6 +38,17 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({'error': 'Invalid operation'})
             }
+
+        # ✅ Save to DynamoDB
+        timestemp = datetime.utcnow().isoformat()
+        item = {
+            'timestemp': timestemp,  # <-- match the DynamoDB table key name exactly
+            'num1': str(num1),
+            'num2': str(num2),
+            'operation': operation,
+            'result': str(result)
+        }
+        table.put_item(Item=item)
 
         return {
             'statusCode': 200,
