@@ -15,12 +15,10 @@
       margin-right: 5px;
       border-radius: 5px 5px 0 0;
     }
-
     .tab.active {
       background: #fff;
       font-weight: bold;
     }
-
     .tab-content {
       display: none;
       border: 1px solid #ccc;
@@ -28,7 +26,6 @@
       background: #fff;
       border-radius: 0 5px 5px 5px;
     }
-
     .tab-content.active {
       display: block;
     }
@@ -43,6 +40,11 @@
 
       document.getElementById(tabId).classList.add('active');
       document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+
+      // Load history only when "History" tab is shown
+      if (tabId === 'tab2') {
+        loadHistory();
+      }
     }
 
     async function callLambda() {
@@ -53,9 +55,30 @@
       try {
         const response = await fetch(url);
         const data = await response.json();
-        document.getElementById('result').innerText = JSON.stringify(data);
+        document.getElementById('result').innerText = JSON.stringify(data, null, 2);
       } catch (error) {
         document.getElementById('result').innerText = 'Error: ' + error.message;
+      }
+    }
+
+    async function loadHistory() {
+      const historyUrl = 'https://<your-lambda-url-for-history>'; // ← replace with your actual Lambda URL
+      const historyElement = document.getElementById('history');
+      historyElement.innerText = 'Loading...';
+
+      try {
+        const response = await fetch(historyUrl);
+        const data = await response.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          historyElement.innerHTML = '<ul>' + data.map(item =>
+            `<li>${item.timestemp} → ${item.num1} ${item.operation} ${item.num2} = ${item.result}</li>`
+          ).join('') + '</ul>';
+        } else {
+          historyElement.innerText = 'No history found.';
+        }
+      } catch (error) {
+        historyElement.innerText = 'Error loading history: ' + error.message;
       }
     }
   </script>
@@ -66,10 +89,11 @@
   <!-- Tabs -->
   <div>
     <div class="tab active" data-tab="tab1" onclick="showTab('tab1')">Calculator</div>
-    <div class="tab" data-tab="tab2" onclick="showTab('tab2')">About</div>
+    <div class="tab" data-tab="tab2" onclick="showTab('tab2')">History</div>
+    <div class="tab" data-tab="tab3" onclick="showTab('tab3')">About</div>
   </div>
 
-  <!-- Tab Content -->
+  <!-- Calculator -->
   <div id="tab1" class="tab-content active">
     <label for="num1">Number 1:</label>
     <input type="text" id="num1" name="num1"><br><br>
@@ -86,7 +110,14 @@
     <pre id="result"></pre>
   </div>
 
+  <!-- History -->
   <div id="tab2" class="tab-content">
+    <h2>History</h2>
+    <div id="history">Click "History" tab to load...</div>
+  </div>
+
+  <!-- About -->
+  <div id="tab3" class="tab-content">
     <h2>About</h2>
     <p>This tool calls a Lambda function hosted on AWS to perform basic arithmetic operations.</p>
     <p>Created by Yonatan Poran 🤘</p>
